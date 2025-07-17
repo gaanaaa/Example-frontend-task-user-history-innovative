@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Simulated Browser History</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23007bff' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-6h2v6zm4 0h-2V7h2v10z'%3E%3C/path%3E%3C/svg%3E" type="image/svg+xml">
+</head>
+<body>
+    <div class="container">
+        <h1>Simulated Browser History</h1>
+
+        <div class="header-controls">
+            <div class="input-section">
+                <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://www.example.com)">
+                <button id="visitButton">Visit URL</button>
+            </div>
+
+            <div class="top-controls">
+                <div class="display-options">
+                    <label for="displayLimit">Show last:</label>
+                    <input type="number" id="displayLimit" value="10" min="1">
+                    <span>URLs</span>
+                </div>
+                <div class="theme-toggle">
+                    <input type="checkbox" id="darkModeToggle">
+                    <label for="darkModeToggle">Dark Mode</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h2>Your History</h2>
+                <input type="text" id="searchHistoryInput" placeholder="Search history..." class="search-input">
+            </div>
+            <ul id="historyList">
+                </ul>
+            <button id="clearHistoryButton" class="clear-button">Clear All History</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>:root {
+    /* Light Mode Variables */
+    --bg-color: #f4f4f4;
+    --container-bg: #fff;
+    --text-color: #333;
+    --header-color: #333;
+    --border-color: #eee;
+    --input-border: #ddd;
+    --input-focus-shadow: rgba(0, 123, 255, 0.25);
+    --button-primary-bg: #007bff;
+    --button-primary-hover: #0056b3;
+    --button-danger-bg: #dc3545;
+    --button-danger-hover: #c82333;
+    --list-item-bg: #f9f9f9;
+    --list-item-hover: #f0f0f0;
+    --url-color: #007bff;
+    --timestamp-color: #666;
+    --group-heading-color: #555;
+    --placeholder-color: #aaa;
+}
+
+/* Dark Mode Variables */
+body.dark-mode {
+    --bg-color: #2c2c2c;
+    --container-bg: #3c3c3c;
+    --text-color: #e0e0e0;
+    --header-color: #f0f0f0;
+    --border-color: #555;
+    --input-border: #666;
+    --input-focus-shadow: rgba(66, 135, 245, 0.5); /* Lighter blue shadow */
+    --button-primary-bg: #4285f4; /* Google Blue */
+    --button-primary-hover: #3367d6;
+    --button-danger-bg: #e57373; /* Lighter red */
+    --button-danger-hover: #ef5350;
+    --list-item-bg: #4a4a4a;
+    --list-item-hover: #5a5a5a;
+    --url-color: #8ab4f8; /* Lighter blue */
+    --timestamp-color: #b0b0b0;
+    --group-heading-color: #ccc;
+    --placeholder-color: #ccc;
+}
+
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth theme transition */
+    color: var(--text-color);
+}
+
+.container {
+    background-color: var(--container-bg);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+    width: 100%;
+    max-width: 650px; /* Slightly wider container */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+h1, h2 {
+    color: var(--header-color);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header-controls {
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.input-section {
+    display: flex;
+    margin-bottom: 15px; /* Space between input/button and top-controls */
+    gap: 10px;
+}
+
+#urlInput {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--container-bg); /* Match container background */
+    color: var(--text-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#urlInput::placeholder {
+    color: var(--placeholder-color);
+}
+
+#urlInput:focus {
+    outline: none;
+    border-color: var(--button-primary-bg);
+    box-shadow: 0 0 0 0.2rem var(--input-focus-shadow);
+}
+
+#visitButton {
+    background-color: var(--button-primary-bg);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+#visitButton:hover {
+    background-color: var(--button-primary-hover);
+}
+
+.top-controls {
+    display: flex;
+    justify-content: space-between; /* Space out limit and dark mode */
+    align-items: center;
+    font-size: 0.9em;
+    color: var(--text-color);
+    padding: 5px 0;
+}
+
+.display-options {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.display-options label {
+    font-weight: bold;
+}
+
+#displayLimit {
+    width: 60px;
+    padding: 8px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 1em;
+    text-align: center;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+}
+
+/* Dark Mode Toggle Styling */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#darkModeToggle {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #ccc;
+    border-radius: 20px;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#darkModeToggle::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s;
+}
+
+#darkModeToggle:checked {
+    background: #007bff; /* On color */
+}
+
+#darkModeToggle:checked::before {
+    transform: translateX(20px);
+}
+
+
+.history-section {
+    padding-top: 20px;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.history-header h2 {
+    margin: 0; /* Remove default margin to align properly */
+    text-align: left;
+}
+
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 14px;
+    width: 200px;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+}
+
+.search-input::placeholder {
+    color: var(--placeholder-color);
+}
+
+#historyList {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+    max-height: 450px; /* Slightly taller history list */
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    background-color: var(--container-bg); /* Match container background */
+}
+
+#historyList li {
+    background-color: var(--list-item-bg);
+    margin-bottom: 8px; /* Slightly reduced margin */
+    padding: 12px 15px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); /* Slightly more prominent shadow */
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#historyList li:last-child {
+    margin-bottom: 0; /* No margin for the last item */
+}
+
+#historyList li:hover {
+    background-color: var(--list-item-hover);
+}
+
+#historyList .url-info {
+    display: flex;
+    flex-direction: column; /* Stack URL and optional title */
+    flex-grow: 1;
+    margin-right: 15px; /* Space for delete button */
+    word-break: break-word; /* For very long URLs */
+}
+
+#historyList .url-info .url-link {
+    font-weight: bold;
+    color: var(--url-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+#historyList .url-info .url-link:hover {
+    text-decoration: underline;
+}
+
+#historyList .timestamp {
+    font-size: 0.85em; /* Slightly smaller timestamp */
+    color: var(--timestamp-color);
+    white-space: nowrap;
+    text-align: right;
+}
+
+#historyList .group-heading {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--group-heading-color);
+    margin: 15px 0 10px 0;
+    text-align: center;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.delete-item-button {
+    background: none;
+    border: none;
+    color: #dc3545; /* Red for delete */
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: 10px; /* Space from timestamp */
+    transition: color 0.2s ease;
+}
+
+body.dark-mode .delete-item-button {
+    color: #e57373; /* Lighter red for dark mode */
+}
+
+.delete-item-button:hover {
+    color: #a00; /* Darker red on hover */
+}
+
+
+.clear-button {
+    background-color: var(--button-danger-bg);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: block;
+    margin: 20px auto 0 auto; /* Margin top and auto-center */
+    transition: background-color 0.3s ease;
+}
+
+.clear-button:hover {
+    background-color: var(--button-danger-hover);
+}
+
+/* No history item style */
+#historyList li:has(.no-history-message) {
+    background-color: transparent;
+    box-shadow: none;
+    justify-content: center;
+    font-style: italic;
+    color: var(--timestamp-color);
+}document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Element References ---
+    const urlInput = document.getElementById('urlInput');
+    const visitButton = document.getElementById('visitButton');
+    const historyList = document.getElementById('historyList');
+    const clearHistoryButton = document.getElementById('clearHistoryButton');
+    const displayLimitInput = document.getElementById('displayLimit');
+    const searchHistoryInput = document.getElementById('searchHistoryInput');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const body = document.body;
+
+    // --- State Variables ---
+    let history = JSON.parse(localStorage.getItem('browserHistory')) || [];
+    let displayLimit = parseInt(localStorage.getItem('historyDisplayLimit') || '10', 10);
+    let currentSearchTerm = '';
+    let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+    // --- Initialize UI from State ---
+    displayLimitInput.value = displayLimit;
+    darkModeToggle.checked = isDarkMode;
+    if (isDarkMode) {
+        body.classList.add('dark-mode');
+    }
+
+    // --- Helper Functions ---
+
+    // Formats a date string into a readable format
+    function formatTimestamp(isoString) {
+        const date = new Date(isoString);
+        const options = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false // 24-hour format
+        };
+        return date.toLocaleString(undefined, options);
+    }
+
+    // Gets the date part of an ISO string (YYYY-MM-DD)
+    function getDateOnly(isoString) {
+        if (!isoString) return null; // Handle cases where timestamp might be missing
+        return isoString.split('T')[0];
+    }
+
+    // --- Core Render Function ---
+    function renderHistory() {
+        historyList.innerHTML = ''; // Clear existing list
+
+        // Filter history based on search term
+        const filteredHistory = history.filter(item =>
+            item.url.toLowerCase().includes(currentSearchTerm.toLowerCase())
+        );
+
+        if (filteredHistory.length === 0) {
+            const noHistoryItem = document.createElement('li');
+            const noHistoryMessage = document.createElement('span');
+            noHistoryMessage.classList.add('no-history-message');
+            noHistoryMessage.textContent = currentSearchTerm ? 'No matching history found.' : 'No history yet. Start by entering a URL!';
+            noHistoryItem.appendChild(noHistoryMessage);
+            historyList.appendChild(noHistoryItem);
+            return;
+        }
+
+        // Apply display limit to the filtered history
+        const itemsToDisplay = Math.min(filteredHistory.length, displayLimit);
+
+        let lastDate = null; // To track for grouping
+
+        for (let i = 0; i < itemsToDisplay; i++) {
+            const item = filteredHistory[i];
+            const currentDate = getDateOnly(item.timestamp);
+
+            // Time-based grouping: Add a heading if the date changes
+            if (currentDate !== lastDate) {
+                const groupHeading = document.createElement('h3');
+                groupHeading.classList.add('group-heading');
+                // Format the heading (e.g., "Today", "Yesterday", or "Date")
+                const today = getDateOnly(new Date().toISOString());
+                // Calculate yesterday's date
+                const yesterdayDate = new Date();
+                yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+                const yesterday = getDateOnly(yesterdayDate.toISOString());
+
+                if (currentDate === today) {
+                    groupHeading.textContent = 'Today';
+                } else if (currentDate === yesterday) {
+                    groupHeading.textContent = 'Yesterday';
+                } else {
+                    // Format for older dates
+                    const dateObj = new Date(item.timestamp);
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    groupHeading.textContent = dateObj.toLocaleDateString(undefined, options);
+                }
+                historyList.appendChild(groupHeading);
+                lastDate = currentDate;
+            }
+
+            const listItem = document.createElement('li');
+
+            // Container for URL and (potential) title
+            const urlInfoSpan = document.createElement('span');
+            urlInfoSpan.classList.add('url-info');
+
+            const urlLink = document.createElement('a');
+            urlLink.classList.add('url-link');
+            urlLink.href = item.url;
+            urlLink.textContent = item.url;
+            urlLink.target = '_blank';
+            urlLink.rel = 'noopener noreferrer'; // Security best practice
+
+            urlInfoSpan.appendChild(urlLink);
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('timestamp');
+            timestampSpan.textContent = formatTimestamp(item.timestamp);
+
+            // Delete button for individual items
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('delete-item-button');
+            deleteButton.innerHTML = '&times;'; // HTML entity for 'x' character
+            deleteButton.title = 'Delete this history item';
+            deleteButton.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent potential link click if button overlaps
+                deleteHistoryItem(item.url); // Use URL as a unique identifier for now
+            });
+
+
+            listItem.appendChild(urlInfoSpan);
+            listItem.appendChild(timestampSpan);
+            listItem.appendChild(deleteButton); // Add the delete button
+            historyList.appendChild(listItem);
+        }
+    }
+
+    // --- History Modification Functions ---
+
+    // Function to add or update a URL in history
+    function addOrUpdateUrlInHistory() {
+        const url = urlInput.value.trim();
+        if (!url) {
+            alert('Please enter a URL.');
+            return;
+        }
+
+        const validUrlPattern = /^(https?:\/\/[^\s$.?#].[^\s]*)$/i;
+        if (!validUrlPattern.test(url)) {
+            alert('Please enter a valid URL (e.g., https://www.example.com)');
+            return;
+        }
+
+        const newTimestamp = new Date().toISOString();
+
+        let existingIndex = -1;
+        for (let i = 0; i < history.length; i++) {
+            if (history[i].url === url) {
+                existingIndex = i;
+                break;
+            }
+        }
+
+        if (existingIndex !== -1) {
+            const existingItem = history.splice(existingIndex, 1)[0];
+            existingItem.timestamp = newTimestamp;
+            history.unshift(existingItem);
+        } else {
+            history.unshift({ url, timestamp: newTimestamp });
+        }
+
+        localStorage.setItem('browserHistory', JSON.stringify(history));
+        urlInput.value = ''; // Clear input
+        renderHistory(); // Re-render to show the updated list
+    }
+
+    // Function to delete a single history item
+    function deleteHistoryItem(urlToDelete) {
+        // Filter out the item to delete
+        history = history.filter(item => item.url !== urlToDelete);
+        localStorage.setItem('browserHistory', JSON.stringify(history));
+        renderHistory(); // Re-render the list
+    }
+
+    // --- Event Listeners ---
+
+    // "Visit URL" button click
+    visitButton.addEventListener('click', addOrUpdateUrlInHistory);
+
+    // Enter key in URL input
+    urlInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            addOrUpdateUrlInHistory();
+        }
+    });
+
+    // Clear All History button click
+    clearHistoryButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear your entire history? This action cannot be undone.')) {
+            history = [];
+            localStorage.removeItem('browserHistory');
+            renderHistory();
+        }
+    });
+
+    // Display Limit input change
+    displayLimitInput.addEventListener('change', () => {
+        let newLimit = parseInt(displayLimitInput.value, 10);
+        if (isNaN(newLimit) || newLimit < 1) {
+            newLimit = 1;
+            displayLimitInput.value = 1;
+        }
+        displayLimit = newLimit;
+        localStorage.setItem('historyDisplayLimit', displayLimit.toString());
+        renderHistory();
+    });
+
+    // Search input keyup/input
+    searchHistoryInput.addEventListener('input', () => {
+        currentSearchTerm = searchHistoryInput.value;
+        renderHistory(); // Re-render with filtered results
+    });
+
+    // Dark Mode Toggle change
+    darkModeToggle.addEventListener('change', () => {
+        isDarkMode = darkModeToggle.checked;
+        if (isDarkMode) {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
+        localStorage.setItem('darkMode', isDarkMode.toString()); // Save preference
+    });
+
+    // --- Initial Load ---
+    renderHistory(); // Render history when the page first loads
+});
